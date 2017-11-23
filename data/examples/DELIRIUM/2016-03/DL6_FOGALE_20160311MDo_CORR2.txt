@@ -1,0 +1,32 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Delay Line Number = 6
+% Fit along Horizontal axis = LINEAR
+% Fit along Vertical axis = PARABOLIC
+% Maximum correction amplitude = 16.891826 micron
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Original File Name = /Users/sylvain/Dropbox/python/delirium/data/examples/DELIRIUM/2016-03/DL6_FOGALE_20160311MDo.dat
+% Correction Script Executed at = 2016-07-31T16:36:49
+% all correction in micron
+# 8  H ->   +0                           # 8  V ->  +11
+# 9  H ->   +0                           # 9  V ->  +10
+#10  H ->   +8                           #10  V ->   +0
+#14  H ->   +0                           #14  V ->   +8
+#15  H ->   +0                           #15  V ->   +7
+#16  H ->   +0                           #16  V ->   +9
+#17  H ->   +0                           #17  V ->   +8
+#25  H ->   +0                           #25  V ->   -8
+#26  H ->   +0                           #26  V ->   -8
+#28  H ->   +0                           #28  V ->   -9
+#29  H ->   +0                           #29  V ->  -13
+#30  H ->   +0                           #30  V ->  -14
+#31  H ->   +0                           #31  V ->  -17
+#32  H ->   +0                           #32  V ->  -15
+#33  H ->  -10                           #33  V ->   +0
+#34  H ->  -11                           #34  V ->   +0
+#35  H ->   -7                           #35  V ->   +0
+#39  H ->   +0                           #39  V ->   +8
+#48  H ->   +0                           #48  V ->   +7
+#76  H ->  +12                           #76  V ->   +0
+#77  H ->   +8                           #77  V ->   +0
+#78  H ->  +12                           #78  V ->   +0
+#79  H ->   +7                           #79  V ->   +0

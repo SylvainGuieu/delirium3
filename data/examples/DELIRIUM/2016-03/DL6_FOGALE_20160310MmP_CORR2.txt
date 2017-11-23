@@ -1,0 +1,15 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Delay Line Number = 6
+% Fit along Horizontal axis = LINEAR
+% Fit along Vertical axis = PARABOLIC
+% Maximum correction amplitude = 13.765914 micron
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Original File Name = /Users/sylvain/Dropbox/python/delirium/data/examples/DELIRIUM/2016-03/DL6_FOGALE_20160310MmP.dat
+% Correction Script Executed at = 2016-07-27T21:31:23
+% all correction in micron
+#12  H ->   +7                           #12  V ->   +0
+#71  H ->   +9                           #71  V ->   +0
+#76  H ->   +8                           #76  V ->   +0
+#77  H ->  -10                           #77  V ->   +0
+#78  H ->  -14                           #78  V ->   +0
+#79  H ->   -9                           #79  V ->   +0

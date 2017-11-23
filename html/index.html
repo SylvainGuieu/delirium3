@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html class="no-js" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US" prefix="og: http://ogp.me/ns#">
+<head>
+	<title>Delirium</title>
+
+<script type="text/javascript" src="data/daily/dates.txt"></script>
+<script type="text/javascript"> 
+	//data = {{dl_files_data}}
+		
+	imgzoomfactor = 1.25
+	zoom = -4
+	date = "last"
+
+	barstatus = 0
+	barsize = 0
+	barwidth = 600
+
+	alignedproduct = false
+	aligneddl = true
+
+	hashdisabled = false	
+	show_control = true
+
+	hashvars = ["imgscale", "alignedproduct", "aligneddl"]
+	imgcash = {}
+
+	TYPE = 0
+	KIND = 0
+	PRODUCT = 1
+
+	hashmodes = [["e","imgscale=1&alignedproduct=0&aligneddl=1&dls=1;2;3;4;5;6&products=Corrections"], 
+				["ep","imgscale=0.5&alignedproduct=0&aligneddl=1&dls=1;2;3;4;5;6&products=Corrections;H%20corection%20plot;V%20corection%20plot"]
+		]
+
+	function imgscale() {
+		if (zoom>=1) return Math.pow(imgzoomfactor, zoom);
+		if (zoom<=-1) return 1.0/Math.pow(imgzoomfactor, -zoom);
+		return 1
+
+		if (zoom>=1) return zoom*imgzoomfactor;
+		if (zoom<=-1) return 1/((-zoom+1)*imgzoomfactor);
+		return 1
+	}		
+
+	function getdata(dlnum, name) {
+		subdata = data[dlnum]
+		for (var i=0;i<subdata.length; i++) {
+			if (subdata[i][0]==name) return subdata[i]
+		}
+		return undefined
+	}
+
+	function isvalid(key) {
+		for (var i=0; i<hashvars.length; i++) {
+			if (hashvars[i]==key) return true;
+		}
+		return false;
+	}
+
+	function readhash(skip) {
+		if (hashdisabled) return 0;		
+
+		if (skip==undefined){
+			skip = []
+		}
+
+		hashes = window.location.hash.substring(1).split("&")
+
+		if (hashes.length && hashes[0].split("=")[0]=="mode") {
+			mode = hashes[0].split("=")[1]
+			for(var i=0; i<hashmodes.length; i++) {
+				if (hashmodes[i][0]==mode) {
+					hashes = hashmodes[i][1].split("&")
+					break
+				}
+			}
+		}
+		
+
+		for (var k=0; k<hashes.length; k++ ) {
+
+			keyval = hashes[k].split("=")
+			for (var ski=0; ski<skip.length; ski++){
+				if (keyval[0]==skip[ski]){
+					continue;
+				}
+			}
+			
+			switch(keyval[0]) {
+				case "cf":
+					vals = keyval[1].split(",")					
+					zoom = parseFloat(vals[0])
+					alignedproduct = parseInt(vals[1])
+					document.getElementById("alignProductCheck").checked = alignedproduct
+					aligneddl = parseInt(vals[2])
+					document.getElementById("alignDLCheck").checked =  aligneddl
+
+					show_control = parseInt(vals[3])
+					if (show_control) {
+						display_control()
+					} else {
+						hide_control()
+					}
+					break
+				case "date":					
+					var check = false;
+
+					newdate = keyval[1]
+					for (var i=0; i<dates.length; i++) {
+						if (newdate==dates[i]) {
+							check=true;
+							break
+						}
+					}
+					if (check) {						
+						date = newdate
+					}
+					break
+
+				case "zoom":
+					zoom = parseFloat(keyval[1])
+
+					break;
+				case "alignedproduct":
+					val = parseInt(keyval[1])
+					alignedproduct = val
+					
+					document.getElementById("alignProductCheck").checked = val
+
+					break;					
+				case "aligneddl":
+					val = parseInt(keyval[1])
+					aligneddl = val
+					document.getElementById("alignDLCheck").checked =  val
+					break;
+				case "dls":
+					setoptions(document.getElementById("DLselection"), keyval[1])					
+					break;
+				case "dp":	
+					setoptions_l(document.getElementById("DailyProductSelection"), keyval[1])
+					break;
+				case "mp":	
+					setoptions_l(document.getElementById("MonitoringProductSelection"), keyval[1])
+					break;	
+			}
+		}		
+	}
+	function setoptions(e, svars) {
+		var vars = svars.split(";")
+		for(var i=0; i<e.length; i++) {
+			e[i].selected = false
+			for (var j=0; j<vars.length; j++) {
+				if (e[i].value==vars[j]) {
+					e[i].selected = true
+					break
+				}
+			}
+		}
+	}
+
+	function setoptions_l(e, svars) {
+		var vars = svars.split(",")
+
+		for(var i=0; i<e.length; i++) {
+			e[i].selected = false
+		}
+		for (var i=0; i<vars.length; i++) {
+			if (e[parseInt(vars[i])]) e[parseInt(vars[i])].selected = true;
+		}	
+	}
+
+	function getoptions(e) {
+		var text = "";
+		var first = true
+		for(var i=0; i<e.length; i++) {
+			if (e[i].selected) {
+				if (!first) text += ";"
+				text += e[i].value
+				first = false
+			}
+		}
+		return text
+	}
+
+	function getoptions_l(e) {
+		var text = "";
+		var first = true
+		for(var i=0; i<e.length; i++) {
+			if (e[i].selected) {
+				if (!first) text += ","
+				text += i
+				first = false
+			}
+		}
+		return text
+	}
+
+
+
+	function writehash() {
+		if (hashdisabled) return 0;
+		var text = ""
+		text += "cf="+zoom+","+(alignedproduct*1)+","+(aligneddl*1)+","+(show_control*1)
+		//text += "zoom="+zoom
+		//text += "&alignedproduct="+(alignedproduct*1)
+		//text += "&aligneddl="+(aligneddl*1)
+		
+		// put the date in hash only if it is not the 
+		// last
+		if (date!="last") {
+			text+= "&date="+date
+		}
+
+		var e = document.getElementById("DLselection")
+		text += "&dls="+getoptions(e)
+		var e = document.getElementById("DailyProductSelection")
+		text += "&dp="+getoptions_l(e)
+		var e = document.getElementById("MonitoringProductSelection")
+		text += "&mp="+getoptions_l(e)
+
+		te = encodeURI(text)
+		for(var i=0; i<hashmodes.length; i++) {
+			if (hashmodes[i][1]==te) {
+				text = "mode="+hashmodes[i][0]
+				break
+			}
+		}	
+		window.location.hash = text
+	}	
+
+
+	function _update_products(p, el, eraze, selected_options) {
+		if (eraze) {
+			while (el.firstChild) {
+    			el.removeChild(el.firstChild);
+			}
+		}
+		if (selected_options==undefined) {
+			selected_options = []
+		}
+		//newelem = document.createElement("option")
+		//newelem.innerHTML = "-"
+		//el[0] = newelem				
+		for(var i=0; i<p.length; i++){
+			newelem = document.createElement("option")
+			newelem.innerHTML = p[i]
+			newelem.value = p[i] 
+			for (var j=0;j<selected_options.length;j++) {
+				if (selected_options[j]==i || selected_options[j]==newelem.value) {
+					newelem.selected = true;
+				}
+			}
+			//if (i==0 && selfirst) newelem.selected = true;
+			el[el.length] = newelem			
+		}
+		el.size = Math.min(p.length,15)		
+	}
+			
+
+	function update_daily_products() {
+		_update_products(daily_product_names, document.getElementById("DailyProductSelection"), true, [0])
+	}
+	function update_monitoring_products() {
+		_update_products(monitoring_product_names, document.getElementById("MonitoringProductSelection"), true, []);
+		//_update_products(monitoring_product_names, document.getElementById("DailyProductSelection"));
+	}
+	function update_products() {
+		update_daily_products();
+		update_monitoring_products();
+	}
+	function uncheck_all(elid) {
+		el = document.getElementById(elid)
+		for (var i=0; i<el.children.length; i++) {
+			el.children[i].selected = false;		
+		}
+		update_content()
+	}
+	function check_all(elid) {
+		el = document.getElementById(elid)		
+		for (var i=0; i<el.children.length; i++) {
+			el.children[i].selected = true;		
+		}
+		update_content()
+	}
+
+	function selected_options(el) {
+		var opts = []
+		for (var i=0; i<el.length; i++) {
+			if (el[i].selected) opts[opts.length] = el[i]
+		}
+		return opts
+	}
+
+	function update_dls() {
+		dls = document.getElementById("DLselection")
+		while (dls.firstChild) {
+    		dls.removeChild(dls.firstChild);
+		}
+		for (var i=0; i<dlsnum.length; i++) {
+			var o = document.createElement("option")
+			o.value = dlsnum[i]
+			o.innerHTML = "DL "+dlsnum[i]
+			//if (i==0) 
+			o.selected = true;
+			dls.appendChild(o)
+		}
+		dls.size = Math.min(dls.length,15)
+
+	}
+	function get_subdata() {
+		subdata = {}
+
+		dls = selected_options(document.getElementById("DLselection"))
+		subdata['dlsnum'] = []
+		for (var i=0; i<dls.length; i++) {
+			subdata['dlsnum'][i] = dls[i].value
+		}
+
+		subdata['daily_product_names'] = []
+		dailies = selected_options(document.getElementById("DailyProductSelection"))
+		for (var i=0; i<dailies.length; i++) {
+			subdata['daily_product_names'][i] = dailies[i].value
+		}
+
+		subdata['monitoring_product_names'] = []
+		monitorings = selected_options(document.getElementById("MonitoringProductSelection"))
+		for (var i=0; i<monitorings.length; i++) {
+			subdata['monitoring_product_names'][i] = monitorings[i].value
+		}
+
+		subdata['data'] = data
+		return subdata			
+	}
+	function flat_subdata(subdata) {
+		flatten = []
+		for (var i=0; i<subdata['dlsnum'].length; i++) {
+			for (var j=0; j<subdata['daily_product_names'].length; j++) { 
+				flatten[flatten.length] = subdata['data'][subdata['dlsnum'][i]][subdata['daily_product_names'][j]]
+			}	
+			for (var j=0; j<subdata['monitoring_product_names'].length; j++) {	
+				flatten[flatten.length] = subdata['data'][subdata['dlsnum'][i]][subdata['monitoring_product_names'][j]]	
+			}
+			
+		}
+		return flatten
+	}
+
+	function update_content() {		
+		
+		// options = Array.prototype.slice.call(document.getElementById("DailyProductSelection").selectedOptions, 0)
+		// options2 = Array.prototype.slice.call(document.getElementById("MonitoringProductSelection").selectedOptions, 0)
+		// options = options.concat(options2)
+
+		// dls = document.getElementById("DLselection").selectedOptions
+
+		content = document.getElementById("content")
+
+		while (content.firstChild) {
+    		content.removeChild(content.firstChild);
+		}
+		//var N = dls.length*options.length
+		subdata = get_subdata()		
+		var N = subdata['dlsnum'].length*(subdata['daily_product_names'].length+subdata['monitoring_product_names'].length)
+		if (N) barinit(N, function(){ writehash();});
+
+		var fk = 0
+		for (var i=0; i<subdata['dlsnum'].length; i++) {
+				if (aligneddl) {
+				    h2 = document.createElement("h2")
+				    h2.innerHTML = "DL "+subdata['dlsnum'][i]
+				    if (i==0) {
+				    	h2.className = "DLTitle firstTitle"
+				    } else {
+				    	h2.className = "DLTitle"
+					}
+				    content.appendChild(h2)
+				}
+				for (var j=0; j<subdata['daily_product_names'].length; j++) {	
+					if (alignedproduct) {
+					    h3 = document.createElement("h3")
+					    h3.innerHTML = ""+subdata['daily_product_names'][j]
+					    h3.className = "ProductTitle"
+					    content.appendChild(h3)
+					}
+					definition = subdata['data'][subdata['dlsnum'][i]][subdata['daily_product_names'][j]]
+					if (definition==undefined) {
+						baradd(1)
+					} else {
+						pos = fk
+						add_content(definition,pos, content)
+						fk += 1 ;
+					}
+			   	}	
+				for (var j=0; j<subdata['monitoring_product_names'].length; j++) {	
+					if (alignedproduct) {
+					    h3 = document.createElement("h3")
+					    h3.innerHTML = ""+subdata['monitoring_product_names'][j]
+					    h3.className = "ProductTitle"
+					    content.appendChild(h3)
+					}					
+					definition = subdata['data'][subdata['dlsnum'][i]][subdata['monitoring_product_names'][j]]
+					if (definition==undefined) {
+						baradd(1)
+					} else {
+						pos = fk
+						add_content(definition,pos, content)
+						fk += 1;
+					}
+			   	}				
+		}
+
+		// for (var i=0; i<dls.length; i++) {
+		// 		if (aligneddl) {
+		// 		    h2 = document.createElement("h2")
+		// 		    h2.innerHTML = "DL "+dls[i].value
+		// 		    h2.className = "DLTitle"
+		// 		    content.appendChild(h2)
+		// 		}
+		// 		for (var j=0; j<options.length; j++) {	
+		// 			if (alignedproduct) {
+		// 			    h3 = document.createElement("h3")
+		// 			    h3.innerHTML = ""+options[j].value
+		// 			    h3.className = "ProductTitle"
+		// 			    content.appendChild(h3)
+		// 			}
+		// 			definition = data[dls[i].value][options[j].value]
+		// 			add_content(definition, content)
+		// 	}				
+		// }		
+		writehash();
+	}
+	
+	function selected_dl() {
+		dl = document.getElementById("DLselection")
+		return dl[dl.selectedIndex].value
+	}
+	function get_type(definition) {
+	 	return definition[TYPE]
+	 }
+	function get_product(definition){
+		return definition[PRODUCT]
+	} 
+	function get_kind(definition) {
+		return "monitoring"
+	}
+
+	function add_content(definition, pos, content, noscale, callback) {
+		
+		type = get_type(definition)
+
+		if (type=="img") {
+			path = get_product(definition)
+			//var rdm = imgcash[path]
+			var rdm = script_date
+			if (rdm == undefined) {
+				rdm = Math.random().toString(36).substring(7);
+			}
+			img = document.createElement("img")			
+			//to avoid browser chache add a random number
+			img.src = path+"?"+rdm
+			img.onload = function () {
+				//img.width = (img.naturalWidth*imgscale)+"px"
+				//alert((img.naturalWidth*imgscale)+"px")
+				if (!noscale) this.width = (this.naturalWidth*imgscale());
+				this.definition = definition
+				this.pos = pos
+				this.onclick = function() {
+					float_content(this)
+				}
+				baradd(1)
+				if (callback) callback(this);
+			}
+			content.appendChild(img)
+						
+		} else if (type=="txt") {
+			//pt = get_plaintext(content)
+			pt = document.createElement("plaintext")
+			pt.innerHTML += "\n"+get_product(definition)
+			content.appendChild(pt)
+			pt.definition = definition
+			pt.pos = pos
+			baradd(1)
+			if (callback) callback(pt);
+
+
+
+		} else if (type=="html") {
+			//pt = get_plaintext(content)
+			pt = document.createElement("span")
+			pt.innerHTML = get_product(definition)
+			content.appendChild(pt)
+			pt.definition = definition
+			pt.pos = pos
+			baradd(1)
+			if (callback) callback(pt);
+			
+		} else if (type=="txtfile") {
+			var client = new XMLHttpRequest();	
+			
+			var rdm = script_date
+			if (rdm == undefined) {
+				var rdm = Math.random().toString(36).substring(7);
+			}
+			//pt = get_plaintext(content)
+			pt = document.createElement("plaintext")
+
+			client.open('GET', get_product(definition)+"?"+rdm, true);
+			client.pt = pt
+			pt.definition = definition
+			pt.pos = pos
+			client.onreadystatechange = function() {
+			  if (this.readyState!==4)  return;
+			  //if (this.status!==200 || this.status!==0) alert(this.status);
+			  this.pt.innerHTML = this.responseText
+			  //pt.innerHTML += "\n"+this.responseText
+		      //alert(this.responseText)
+		      baradd(1)
+		      if (callback) callback(pt);	  
+			}
+			client.send();
+			content.appendChild(pt)  
+			
+		} else if (type=="htmlfile") {
+			var client = new XMLHttpRequest();	
+			
+			var rdm = script_date
+			if (rdm == undefined) {
+				var rdm = Math.random().toString(36).substring(7);
+			}
+			//pt = get_plaintext(content)
+			pt = document.createElement("span")
+
+			client.open('GET', get_product(definition)+"?"+rdm, true);
+			client.pt = pt
+			pt.definition = definition
+			pt.pos = pos
+			client.onreadystatechange = function() {
+			  if (this.readyState!==4)  return;
+			  //if (this.status!==200 || this.status!==0) alert(this.status);
+			  this.pt.innerHTML = this.responseText
+			  //pt.innerHTML += "\n"+this.responseText
+		      //alert(this.responseText)
+		      baradd(1)
+		      if (callback) callback(pt);	  
+			}
+			client.send();
+			content.appendChild(pt)  
+			
+		} else {
+			baradd(1)
+		}   
+	}
+
+	function float_init(activate) {
+		box = document.getElementById("FloatContent")
+		if (!activate && box.style['display']=="none") return;
+
+		shade = document.getElementById("Shade")
+		shade.style['display'] = 'inline'
+		shade.style['width'] =  window.innerWidth+"px"
+		shade.style['height'] = window.innerHeight+"px"
+		shade.style['left'] = window.scrollX+"px"
+		shade.style['top']  = window.scrollY+"px"
+
+		
+		box.style['display'] = 'inline'
+		box.style['width'] =  (window.innerWidth*0.9)+"px"
+		box.style['height'] = (window.innerHeight*0.9)+"px"
+
+		box.style['left'] =(window.innerWidth*0.10/2. +window.scrollX)+"px"
+		box.style['top'] = (window.innerHeight*0.10/2.+window.scrollY)+"px"
+		box.activated = true
+
+		childs = box.getElementsByTagName("img")
+		if (childs.length) init_float_content(childs[0], box)
+		return box;
+	}
+	function init_float_content (newel, box) {
+		newel.id = "float_content"
+		if (newel.tagName.toUpperCase()!="IMG") return;
+			newel.style['display'] = 'inline-block'
+			//newel['align']   = 'center'
+						
+			var imgClass = (newel.width/newel.height > 1) ? 'wide' : 'tall';
+
+			width = newel.naturalWidth
+			height = newel.naturalHeight
+			bwidth = parseInt(box.style['width'])
+			bheight = parseInt(box.style['height'])
+			prop = width/height	
+			if (width> bwidth) {
+				width  = bwidth
+				height = width/prop
+			}			
+			if (height> bheight) {
+				height  = bheight
+				width = height*prop
+			}
+			newel.className = "floatImg";								
+			newel.style['width'] =   parseInt(width)+"px"
+			newel.style['height'] =  parseInt(height)+"px"
+			if (bheight>height) {
+				newel.style['margin-top'] = parseInt((bheight-height)/2.0)+"px";
+			} else {
+				newel.style['margin-top'] = "0px";
+			}
+			if (bwidth>width) {
+				newel.style['margin-left'] = parseInt((bwidth-width)/2.0)+"px";
+			} else{
+				newel.style['margin-left'] = "0px";
+			}
+
+			/*
+			if (imgClass=="wide") {
+				newel.style['height'] =  box.style['height']
+				newel.style['width'] =  "auto"
+			} else {
+				newel.style['width'] =  box.style['width']
+				newel.style['height'] =  "auto"
+			}
+			*/
+			//alert(imgClass)
+			//newel.id = "test" 
+			
+			//newel.className = imgClass;
+	}
+
+
+	function next_float_content() {
+		if (document.getElementById("FloatContent").style['display']=="none") return;
+		el = document.getElementById("float_content")
+		if (el==undefined) return;
+		if (el.pos==undefined) return;
+		pos = el.pos
+		flatten = flat_subdata(subdata)
+		if ((pos+1)>=flatten.length) return ;
+
+		box = float_init(true)
+		
+		close = document.getElementById("FloatClose")
+		while (box.firstChild) {
+    		box.removeChild(box.firstChild);
+		}
+		box.appendChild(close)
+
+		
+
+
+		add_content(flatten[pos+1], pos+1, box, true, function(newel) {init_float_content(newel, box)});	
+	}
+
+	function prev_float_content() {
+		if (document.getElementById("FloatContent").style['display']=="none") return;
+		el = document.getElementById("float_content")
+		if (el==undefined) return;
+		if (el.pos==undefined) return;
+		pos = el.pos
+		flatten = flat_subdata(subdata)
+		if ((pos-1)<0) return ;
+
+
+		box = float_init(true)
+		
+		close = document.getElementById("FloatClose")
+		while (box.firstChild) {
+    		box.removeChild(box.firstChild);
+		}
+		box.appendChild(close)
+
+		
+
+
+		add_content(flatten[pos-1], pos-1, box, true, function(newel) {init_float_content(newel, box)});	
+	}
+
+
+	function float_content(el) {
+		if (el.definition==undefined) return;
+		box = float_init(true)
+		
+		close = document.getElementById("FloatClose")
+		while (box.firstChild) {
+    		box.removeChild(box.firstChild);
+		}
+		box.appendChild(close)
+		add_content(el.definition, el.pos, box, true, function(newel) {init_float_content(newel, box)});
+
+
+		//newel = box.children[0]
+		//newel['display'] = 'inline'
+		//newel['align'] = 'center'
+		//if (box.width<newel.width || box.height<newel.height) {
+		//	if (newel.width>newel.height) {
+		//		newel['width'] = '100%'
+		//	} else {
+		//		newel['height'] = '100%'
+		//	}
+		//}
+
+	}
+	function close_float_content() {
+		box = document.getElementById("FloatContent")
+		box.style['display'] = "none"
+		box.activated = false
+		shade = document.getElementById("Shade")
+		shade.style['display'] = 'none'		
+	}	
+
+	function get_plaintext(content) {
+		pt = document.getElementById("PlainText")
+		if (pt==undefined) {
+			pt = document.createElement("plaintext")
+			pt.id = "PlainText"
+			content.appendChild(pt)
+		}
+		return pt
+	}
+
+	function scale_img_size() {		
+		content = document.getElementById("content")
+		imgs = content.getElementsByTagName("img")
+		for (var i=0; i<imgs.length; i++) {
+			img = imgs[i]
+			img.width = img.naturalWidth*imgscale()
+			//img.style['width'] = img.naturalWidth*imgscale
+		}
+		writehash()
+	}
+
+	function barinit(N, callback) {
+		barsize = N
+		barstatus = 0
+		barcallback = callback
+		bar = document.getElementById("bar")		
+		bar.style['width'] =  '0px'
+		barw = document.getElementById("barwraper")
+		barw.style['visibility'] = "visible"		
+		barwidth = document.getElementById("content").clientWidth
+		barw.style['width'] = barwidth+"px"
+
+	}
+	function barend() {
+		barstatus = 0
+		bar.style['width'] =  '0px'
+		document.getElementById("barwraper").style['visibility'] = "hidden"
+		if (barcallback) barcallback()
+	}	
+	function baradd(n) {		
+		barstatus += n
+		bar = document.getElementById("bar")
+		if (barstatus>=barsize) {
+			barend()
+		} else {
+			bar.style['width'] = parseInt((barwidth*barstatus/barsize))+"px"
+		}
+	}
+	function toggle_control() {
+		if (show_control) {
+			hide_control()
+		} else {
+			display_control()
+		}
+		writehash()
+	}
+	function hide_control(){
+		c = document.getElementById("control")
+		h = document.getElementById("controlHidder")
+		s = document.getElementById("controlShower")
+		c.style['display'] = "none"
+		h.style["display"] = "none"
+		s.style["display"] = "block"
+		//h.innerHTML = "Show Selection"
+		show_control = false;
+	}
+	function display_control(){
+		c = document.getElementById("control")
+		h = document.getElementById("controlHidder")
+		s = document.getElementById("controlShower")
+
+		c.style['display'] = "block"
+		h.style["display"] = "block"
+		s.style["display"] = "none"
+		//h.innerHTML = "Hidde"
+		show_control = true;
+	}
+	function original_img_size() {
+		zoom = 1
+		scale_img_size()
+	}
+	function reduce_img_size() {
+		zoom -= 1;
+		scale_img_size()
+	}
+	function enlarge_img_size() {
+		zoom += 1;
+		// imgscale = imgscale*imgzoomfactor
+		scale_img_size()
+	}	
+	function align_product() {
+		if (!alignedproduct) {
+			alignedproduct = true
+			update_content()
+		} 
+	}
+	function unalign_product() {
+		if (alignedproduct) {
+			alignedproduct = false
+			update_content()
+		} 
+	}
+	function align_dl() {
+		if (!aligneddl) {
+			aligneddl = true
+			update_content()
+		} 
+	}
+	function unalign_dl() {
+		if (aligneddl) {
+			aligneddl = false
+			update_content()
+		} 
+	}
+	function toggle_product_alignment(){
+		e = document.getElementById("alignProductCheck")
+		if (e.checked) {
+			align_product()
+		} else {
+			unalign_product()
+		}
+	}
+	function toggle_dl_alignment(){
+		e = document.getElementById("alignDLCheck")
+		if (e.checked) {
+			align_dl()
+		} else {
+			unalign_dl()
+		}
+	}
+	function update_dates(){
+		el = document.getElementById("date")
+		elc = document.getElementById("dateChooser")
+		if (date=="last") {
+			var fdate = dates[dates.length-1]
+		} else {
+			fdate = date
+		}
+
+		if (elc!=undefined) {
+			while (elc.firstChild) {
+    			elc.removeChild(elc.firstChild);
+			}
+			if (!elc.length) {
+				for(var i=0; i<dates.length; i++){
+					newelem = document.createElement("option")
+					newelem.value = dates[i]
+					newelem.innerHTML = dates[i]
+					if (dates[i]==date) newelem.selected = true;
+					elc[elc.length] = newelem
+				}
+				newelem = document.createElement("option")
+				newelem.value = "last";
+				newelem.innerHTML = "last";
+				if (date=="last") newelem.selected = true;
+				elc[elc.length] = newelem
+			}
+		}		
+		if (el!=undefined) {
+			el.innerHTML = fdate
+			el.style['display'] = "inline";
+			elc.style['display'] = "none";
+		}		
+		el = document.getElementById("script_date")
+
+		if (el!=undefined) {
+			el.innerHTML = script_date
+		}
+	}
+	function choose_date(){
+		el = document.getElementById("date")
+		elc = document.getElementById("dateChooser")
+		elc.style['display'] = "inline";
+		elc.focus()
+		var event;
+	    event = document.createEvent('MouseEvents');
+    	event.initMouseEvent('mousedown', true, true, window);
+	    elc.dispatchEvent(event);	    	    
+	}
+	function load_from_selected_date() {			
+			elc = document.getElementById("dateChooser")			
+			for (var i=0; i<elc.length; i++){				
+				if (elc[i].selected) {					
+					date = elc[i].value;
+					writehash()
+					return load_data();
+				}
+			}
+
+
+	}
+
+	function load_data() {
+		var client = new XMLHttpRequest();				
+		//var rdm = script_date
+
+		if (date=="last") {
+			var fdate = dates[dates.length-1]
+		} else {
+			var fdate = date
+		}
+		rdm = Math.random().toString(36).substring(7);
+		file = "data/daily/"+fdate+"/data.json"		
+		//pt = get_plaintext(content)		
+		client.open('GET', file+"?"+rdm, true);
+						
+		client.onreadystatechange = function() {
+				if (this.readyState!==4)  return;
+			  	//if (this.status!==200 || this.status!==0) alert(this.status);
+			  	alldata = JSON.parse(this.responseText)
+
+			  	// temporary parser
+			  	keys = ['script_date', 
+			  		    'daily_product_names', 
+			  		    'monitoring_product_names', 
+			  		    'dlsnum', 
+			  		    'data'
+			  	]
+			  	for (var i=0; i<keys.length; i++) {
+			  		window[keys[i]] = alldata[keys[i]]
+			  	}
+
+			  	
+			 	update_dls()
+				update_products()	
+				var sdate = date //save the date
+				readhash()
+				date = sdate
+				update_content()
+				update_dates()
+				writehash()
+			}
+			client.send();
+	}
+	var windowloaded = false
+	window.onload = function() {	
+		/* update_dls()
+		update_products()
+		readhash()
+		update_content()
+		update_dates()*/
+		//date = "last"//dates[dates.length-1]	
+		readhash([])			
+		load_data()
+		window.onkeydown = function (event) {
+			//alert(event.keyCode)
+			switch(event.keyCode) {
+				case 27:
+					close_float_content();
+					break
+				case 39:
+					next_float_content();
+					break;
+				case 37:					
+					prev_float_content();					
+					break;	
+				case 189:
+					reduce_img_size();
+					break;
+				case 187:
+					enlarge_img_size();
+					break
+				case 48:
+					original_img_size();
+					break;
+				case 81:
+					e = document.getElementById("alignDLCheck")
+					e.checked = !e.checked
+					toggle_dl_alignment()
+					break;
+				case 87:
+					e = document.getElementById("alignProductCheck")
+					e.checked = !e.checked
+					toggle_product_alignment()
+					break;
+
+			}
+		}
+		window.onresize = function() {
+			float_init()
+		}
+		window.onscroll =window.onresize
+	}
+
+
+
+
+
+</script>
+
+<style>
+body {
+	margin-left:30px;
+	margin-right:30px;
+}
+h2.DLTitle  { 
+	border-top: thin solid #000000;
+} 
+h2.firstTitle  { 
+	border-top: none;
+} 
+#bar {
+	width:   0px;
+	height: 6px;
+	background-color: blue	
+}
+#barwraper {
+	width:  100px;
+	height: 7px;
+	border: thin solid black;
+	visibility: hidden;
+}
+#picSizeControls {
+	/*float: right;*/
+	margin-right: 30px;
+}
+.dates {
+	float: right;
+	margin-right: 30px;
+	font-size: 0.3em;
+}
+#FloatContent {
+	position: absolute;
+	display : none;
+	border : thick solid gray;
+	background-color: white;	
+	z-index: 10;
+}
+#FloatClose {
+	float: right;	
+	margin-right: 2px;
+	margin-top: 2px;
+	cursor: pointer;
+}
+.floatImg {
+	display: inline-block;
+	float: left;
+	padding: 0px;
+	/* margin-left: 300px;
+	 float: left;
+	margin: auto;	*/
+}
+#Shade {
+	position: absolute;
+	opacity: 0.8;
+	z-index: 1;
+	background-color: gray;
+	display : none;
+}
+#controlHidder{
+	cursor: pointer;		
+	font-size: 0.4em;
+	margin-left: -8px;
+	margin-top: -8px;
+	/*float: right;*/
+}
+#controlShower{
+	cursor: pointer;	
+	color: blue;
+	display: none;
+	font-size: 0.8em;
+	/*float: right;*/
+}	
+#control {
+	/*border: thin solid black;*/
+	display: block;
+	border: 3px solid #f0f0f0;
+	/*background-color: #f0f0f0;*/
+	/*background-color: #566573;*/
+
+	margin-left: 0px;
+	padding: 10px 10px 10px 10px;
+}
+#date {
+	cursor: pointer;
+}
+#bheader {
+	/*background-color: #f0f0f0;
+	border: 3px solid #f0f0f0;
+	/*background-color: #566573;*/
+}
+.check {
+	cursor: pointer;
+}
+.uncheck {
+	cursor: pointer;
+	font-size: 0.8em;
+	text-decoration: underline;
+}
+.tdsel {
+	padding-right: 15px;
+	padding-left: 15px;
+	width: 200px;
+}
+.selector {
+	background-color: #344351;	
+	background-color: #707B7C;
+	color: #fff;
+	border: none;
+	/*
+	background-color: #fff;	
+	color: #000;
+	border: thin solid #707B7C;
+	*/
+	width: 100%;
+	padding-left:10px;
+	padding-right: 10px;
+	padding-top:10px;
+	padding-bottom:10px;
+}
+.headerselector {
+	background-color: #344351;
+	background-color: #707B7C;
+	color: #fff;
+	border: none;
+	/*
+	background-color: #fff;	
+	color: #000;
+	border: thin solid #707B7C;
+	*/
+}
+.imgcontrol {
+	cursor: pointer;
+	font-size: 0.8em;
+	text-decoration: underline;
+}
+.title {
+	padding-left:5px;
+	/*float:left;*/
+}
+.summary {
+	margin-bottom: 20px;
+}
+td.layoutControl {
+	border-left:thick solid #f0f0f0;
+	text-align:center;background:#f9f9f9
+}
+
+option:checked {
+    /*background-color: linear-gradient(#5A2569, #5A2569);*/
+    /*background-color: blue;*/
+
+    /*border: thin solid black;*/
+}
+
+</style>
+</head>
+<body id="body">
+<span id="Shade" style="display:none" onclick="close_float_content()"></span>
+<span id="FloatContent" style="display:none">
+	<div id="FloatClose" onclick="close_float_content()">X</div>
+</span>
+<div>
+<h1 class="title">Delirium <span id="date" onclick="choose_date()">-Choose Date-</span><select id="dateChooser" style="display:none" onchange="load_from_selected_date()"></select>
+<span class="dates" id="dates">	
+	Script executed at : <span id="script_date"></span>	
+</span>
+</h1>
+</div>
+
+<div class="bheader" id="bheader">
+
+<div id="controlShower" onclick="toggle_control()">select.</div>
+
+	<!-- <tr><td  valign="top">
+		<div id="controlHidder" onclick="toggle_control()">&lsaquo;</div>
+		<div id="controlShower" onclick="toggle_control()">&rsaquo;</div>
+	</td> -->
+<div class="control" id="control">
+	<span id="controlHidder" class="ulcross" onclick="toggle_control()">X</span>
+	<table style="text-align:center;width:100%">
+		<tr><td style="width:80%;text-align:center;">
+			<table >
+				<tr>
+					<td class="tdsel headerselector">Delay lines</td><td></td>
+					<td class="tdsel headerselector">Daily Products</td><td></td>
+					<td class="tdsel headerselector">Monitoring Products</td>
+				</tr>
+				<tr>
+					<td><select id="DLselection" onchange="update_content();" multiple size=6 class="selector"></select></td>
+					<td>-----&gt;</td>
+					<td><select id="DailyProductSelection" onchange="update_content();" multiple size=1 class="selector"></select></td>
+					<td>-----&gt;</td>
+					<td><select id="MonitoringProductSelection" onchange="update_content();" multiple size=1 class="selector"></select></td>
+				</tr>
+				<tr>
+					<td > <a onclick="check_all('DLselection')" class="check uncheck">All</a></td><td></td>
+					<td ><a onclick="check_all('DailyProductSelection')" class="check uncheck">All</a> <a onclick="uncheck_all('DailyProductSelection')" class="check uncheck">None</a></td><td></td>
+					<td ><a onclick="check_all('MonitoringProductSelection')" class="check uncheck">All</a> <a onclick="uncheck_all('MonitoringProductSelection')" class="check uncheck">None</a></td>
+				</tr>
+			</table></td>
+		<td class="layoutControl">			
+			<p>
+			img size: 
+			<a class="check imgcontrol" onclick="reduce_img_size()">smaller</a>
+			<a class="check imgcontrol" onclick="original_img_size()">O</a>	
+			<a class="check imgcontrol" onclick="enlarge_img_size()">bigger</a>
+			</p><p>
+			Sep. DL: <input type="checkbox" id="alignDLCheck" checked onchange="toggle_dl_alignment()">
+			Sep. Product: <input type="checkbox" id="alignProductCheck"  onchange="toggle_product_alignment()">			
+			</p>
+		</td>
+		</tr>
+	</table>
+</div>
+
+<div id=barwraper>
+	<div id=bar></div>
+</div>
+</div>
+<div id=content>
+
+</div>
+
+</body>
