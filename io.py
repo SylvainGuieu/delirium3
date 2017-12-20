@@ -5,6 +5,7 @@ import os
 import numpy as np
 from .log import Log
 import datetime
+import json 
 log = Log(context=("DELIRIUM, I/O"))
 
 DIRECT = "direct"
@@ -367,7 +368,23 @@ class Product(fpath):
         self.products = {}
         self.dirs = dict(dirs)
 
+        self.load()
         return self
+
+    def load(self):        
+        if self.exists():
+            with fpath(self).replace_ext(".json").open('r') as f:
+                try:
+                    self.products = json.load(f)
+                except ValueError:
+                    pass
+                else:
+                    # Quick patch json keys are always string not integer
+                    # change the dlnum string to integers
+                    for sdl in list(self.products['data'].keys()):
+                        self.products['data'][int(sdl)] = self.products['data'][sdl]
+                        del self.products['data'][sdl]
+
     def add(self, dlnum, name, kind, ptype, *args):
         """ add a product to the list 
     
